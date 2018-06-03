@@ -32,14 +32,18 @@ def launch_features(data, day):
     for i in [1, 3, 5, 7, 9, 11, 14]:  # 1,3,5,7
         temp = launch.loc[launch.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'launch_in_'+str(i)})
         data = pd.merge(data, temp, how='left', on=['user_id'])
+    data = data.fillna(0)
     # 启动时间差特征
-    launch['last_launch_day'] = launch.groupby(['user_id'])['day'].shift(1)
+    launch['last_launch_day'] = launch.sort_values(['user_id', 'day']).groupby(['user_id'])['day'].shift(1)
     launch['launch_diff'] = launch['day'] - launch['last_launch_day'] - 1
     del(launch['last_launch_day'])
-    launch.groupby(['user_id'])['launch_diff'].agg({'launch_diff_max': 'max', 'launch_diff_min': 'min', 'launch_diff_avg': 'sum', 'launch_diff_var': 'var'})
-
+    temp = launch.groupby(['user_id'])['launch_diff'].agg({'launch_diff_max': 'max', 'launch_diff_min': 'min', 'launch_diff_avg': 'sum', 'launch_diff_var': 'var', 'total_launch_count': 'size'}).reset_index()
+    temp['launch_diff_avg'] = temp['launch_diff_avg']/temp['total_launch_count']
+    data = pd.merge(data, temp, how='left', on=['user_id'])
+    data = data.fillna(-1)
+    temp = launch.loc[launch.launch_diff == 0].groupby(['user_id'])['launch_diff'].size().reset_index().rename(columns={'launch_diff': 'continuous_launch_times'})
+    data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(0)
-
     return data
 
 

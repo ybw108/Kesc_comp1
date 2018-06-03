@@ -40,7 +40,7 @@ def offline(features):
         #     f1 = metrics.f1_score(y_test, y_pred)
         # f1_score.append(f1)
 
-        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.39).astype(int)
+        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.398).astype(int)
         f1_score.append(metrics.f1_score(y_test, y_pred))
 
     used_features = [i for i in train[features].columns]
@@ -61,7 +61,7 @@ def online(features):
     gbm.fit(train[features], train['label'], feature_name=features, categorical_feature=['register_type'])
     test['predicted_score'] = gbm.predict(test[features])
 
-    test = test[test['predicted_score'] >= 0.39]
+    test = test[test['predicted_score'] >= 0.398]
     test[['user_id']].to_csv('../result/result.csv', header=False, index=False, sep=' ')
 
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                 c not in ['label', 'user_id', ]]
 
     offline(features)
-    #online(features)
+    online(features)
 
 
 
