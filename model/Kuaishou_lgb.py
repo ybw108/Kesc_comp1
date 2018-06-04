@@ -48,7 +48,6 @@ def offline(features):
     print(feat_imp, 'number_of_features: ', len(feat_imp))
     print(best_score, '\n', f1_score, '\n', best_iteration)
     print('average of best auc: ' + str(sum(best_score)/len(best_score)))
-    #print('best_cutoff = ', best_cutoff)
     print('average of best f1_score: ', str(sum(f1_score)/len(f1_score)))
     print('average of best iteration: ' + str(sum(best_iteration)/len(best_iteration)))
 
@@ -71,7 +70,7 @@ if __name__ == '__main__':
     train = pd.concat([train_1, train_2])
 
     features = [c for c in train if
-                c not in ['label', 'user_id', ]]
+                c not in ['label', 'user_id', 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio']]
 
     offline(features)
     online(features)

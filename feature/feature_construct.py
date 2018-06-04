@@ -39,11 +39,14 @@ def launch_features(data, day):
     del(launch['last_launch_day'])
     temp = launch.groupby(['user_id'])['launch_diff'].agg({'launch_diff_max': 'max', 'launch_diff_min': 'min', 'launch_diff_avg': 'sum', 'launch_diff_var': 'var', 'total_launch_count': 'size'}).reset_index()
     temp['launch_diff_avg'] = temp['launch_diff_avg']/temp['total_launch_count']
+    temp2 = launch.loc[launch.launch_diff == 0].groupby(['user_id'])['launch_diff'].size().reset_index().rename(columns={'launch_diff': 'continuous_launch_times'})
+    temp = pd.merge(temp, temp2, how='left', on=['user_id'])
+    temp['continuous_launch_ratio'] = temp['continuous_launch_times']/temp['total_launch_count']
     data = pd.merge(data, temp, how='left', on=['user_id'])
+    data['continuous_launch_ratio'] = data['continuous_launch_ratio'].fillna(0)
+    del(data['continuous_launch_times'])
     data = data.fillna(-1)
-    temp = launch.loc[launch.launch_diff == 0].groupby(['user_id'])['launch_diff'].size().reset_index().rename(columns={'launch_diff': 'continuous_launch_times'})
-    data = pd.merge(data, temp, how='left', on=['user_id'])
-    data = data.fillna(0)
+
     return data
 
 
