@@ -1,6 +1,7 @@
 import pandas as pd
 import gc
 
+
 def read_data(first_day, last_day):
     user_reg_temp = pd.read_csv('../data/user_reg.csv', index_col=False)
     act_temp = pd.read_csv('../data/act.csv', index_col=False)
@@ -17,6 +18,9 @@ def reg_features(data, day):
     data = pd.merge(data, user_reg, how='left', on=['user_id'])
     # 合并出现次数过少的项
     data['register_type'] = data['register_type'].apply(lambda x: 9 if x >= 9 else x)
+    temp = data.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
+    data = pd.merge(data, temp, 'left', ['device_type'])
+    data[data.device_count == 1]['device_type'] = 1
     # 注册时长
     data['register_length'] = day - data['register_day']
 
