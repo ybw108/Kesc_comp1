@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import log_loss
 import lightgbm as lgb
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn import metrics
 
 
@@ -70,11 +70,11 @@ if __name__ == '__main__':
     train = pd.concat([train_1, train_2])
 
     features = [c for c in train if
-                c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio']]
+                c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio', 'device_count']]
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
 
     offline(features)
-    #online(features)
+    online(features)
 
 
 

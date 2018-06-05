@@ -1,5 +1,13 @@
 import pandas as pd
 import gc
+from math import log
+
+
+# def merge_device_type(row):
+#     count = row['device_count']
+#     if count == 1:
+#         row['device_type'] = 99999
+#     return row
 
 
 def read_data(first_day, last_day):
@@ -20,7 +28,9 @@ def reg_features(data, day):
     data['register_type'] = data['register_type'].apply(lambda x: 9 if x >= 9 else x)
     # temp = data.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
     # data = pd.merge(data, temp, 'left', ['device_type'])
-    # data[data.device_count == 1]['device_type'] = 1
+    # data = data.apply(merge_device_type, axis=1)
+    # del(data['device_count'])
+    # data['device_count2'] = data['device_count'].apply(lambda x: log(1 + x))
     # 注册时长
     data['register_length'] = day - data['register_day']
 
@@ -64,7 +74,12 @@ def act_features(data, day):
         temp = act.loc[act.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'act_in_'+str(i)})
         data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(0)
-
+    temp = act.groupby(['user_id', 'day']).size().rename('day_act_times').reset_index()
+    act_temp = pd.merge(act, temp, how='left', on=['user_id', 'day'])
+    temp = act_temp.drop_duplicates(['user_id', 'day']).groupby(['user_id'])['day_act_times'].agg({'day_act_max': 'max', 'day_act_min': 'min', 'day_act_avg': 'sum', 'day_act_var': 'var', 'act_day_count': 'size'}).reset_index()
+    temp['day_act_avg'] = temp['day_act_avg'] / temp['act_day_count']
+    data = pd.merge(data, temp, how='left', on=['user_id'])
+    data = data.fillna(-1)
     return data
 
 
