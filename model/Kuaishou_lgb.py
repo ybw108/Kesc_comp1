@@ -8,7 +8,7 @@ from sklearn import metrics
 
 
 def offline(features):
-    #train = pd.read_csv('../data/train.csv', index_col=False)
+    # train = pd.read_csv('../data/train.csv', index_col=False)
     kf = KFold(n_splits=10, shuffle=True, random_state=2018)
     X = train[features]
     y = train['label']
@@ -53,7 +53,7 @@ def offline(features):
 
 
 def online(features):
-    #train = pd.read_csv('../data/train.csv', index_col=False)
+    # train = pd.read_csv('../data/train.csv', index_col=False)
     test = pd.read_csv('../data/test.csv', index_col=False)
     gbm = lgb.LGBMRegressor(objective='binary', seed=2018)
 
@@ -70,10 +70,11 @@ if __name__ == '__main__':
     train = pd.concat([train_1, train_2])
 
     features = [c for c in train if
-                c not in ['label', 'user_id', 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio']]
+                c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio']]
+    # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
 
     offline(features)
-    online(features)
+    #online(features)
 
 
 

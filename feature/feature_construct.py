@@ -18,9 +18,9 @@ def reg_features(data, day):
     data = pd.merge(data, user_reg, how='left', on=['user_id'])
     # 合并出现次数过少的项
     data['register_type'] = data['register_type'].apply(lambda x: 9 if x >= 9 else x)
-    temp = data.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
-    data = pd.merge(data, temp, 'left', ['device_type'])
-    data[data.device_count == 1]['device_type'] = 1
+    # temp = data.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
+    # data = pd.merge(data, temp, 'left', ['device_type'])
+    # data[data.device_count == 1]['device_type'] = 1
     # 注册时长
     data['register_length'] = day - data['register_day']
 
@@ -31,6 +31,7 @@ def launch_features(data, day):
     # last launch date
     last_launch = launch.sort_values(by=['day']).drop_duplicates(['user_id'], keep='last').rename(columns={0: 'user_id', 'day': 'last_launch_day'})
     data = pd.merge(data, last_launch, how='left', on=['user_id'])
+    data['launch_diff_target_day'] = day - data['last_launch_day']
     data = data.fillna(-1)
     # launch times in X days
     for i in [1, 3, 5, 7, 9, 11, 14]:  # 1,3,5,7
@@ -57,6 +58,7 @@ def launch_features(data, day):
 def act_features(data, day):
     last_act = act[['user_id', 'day']].sort_values(by=['day']).drop_duplicates(['user_id'], keep='last').rename(columns={0: 'user_id', 'day': 'last_act_day'})
     data = pd.merge(data, last_act, how='left', on=['user_id'])
+    data['act_diff_target_day'] = day - data['last_act_day']
     data = data.fillna(-1)
     for i in [1, 3, 5, 7, 9, 11, 14]:
         temp = act.loc[act.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'act_in_'+str(i)})
@@ -69,6 +71,7 @@ def act_features(data, day):
 def create_features(data, day):
     last_create = create.sort_values(by=['day']).drop_duplicates(['user_id'], keep='last').rename(columns={0: 'user_id', 'day': 'last_create_day'})
     data = pd.merge(data, last_create, how='left', on=['user_id'])
+    data['create_diff_target_day'] = day - data['last_create_day']
     data = data.fillna(-1)
     for i in [1, 3, 5, 7, 9, 11, 14]:
         temp = create.loc[create.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'create_in_'+str(i)})
