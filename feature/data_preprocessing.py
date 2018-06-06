@@ -41,10 +41,10 @@ if __name__ == '__main__':
     train_1 = give_label(17, 23, train_1)
     train_2 = give_label(24, 30, train_2)
     gc.collect()
-    # 处理device_type中的稀有项
-    temp = user_reg.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
-    user_reg = pd.merge(user_reg, temp, 'left', ['device_type'])
-    user_reg = user_reg.apply(merge_device_type, axis=1)
+    # # 处理device_type中的稀有项
+    # temp = user_reg.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
+    # user_reg = pd.merge(user_reg, temp, 'left', ['device_type'])
+    # user_reg = user_reg.apply(merge_device_type, axis=1)
 
     # 输出
     train_1.to_csv('../data/train_1_list.csv', index=False)

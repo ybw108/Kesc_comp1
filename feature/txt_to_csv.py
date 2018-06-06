@@ -20,7 +20,7 @@ video_create = pd.read_table('E:/Kesci_Kuaishou/data/raw/video_create_log.txt', 
 # plt.xlabel('day', fontsize=12)
 # plt.show()
 
-for i in ['app_launch', 'user_act','user_reg', 'video_create']:
+for i in ['app_launch', 'user_act', 'user_reg', 'video_create']:
     locals()[i].to_csv('E:/Kesci_Kuaishou/data/' + str(i) + '.csv', encoding='utf-8', index=False)
 
 # split train and valid

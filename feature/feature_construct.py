@@ -92,6 +92,9 @@ def act_features(data, day):
     temp2['last_second_diff'] = temp2['day_act_times'] - temp2['last_day_act_times']
     temp2 = pd.merge(temp2, temp[['user_id', 'day_act_avg']], how='left', on=['user_id'])
     temp2['last_avg_diff'] = temp2['day_act_times'] - temp2['day_act_avg']
+
+
+
     temp2 = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last')
     data = pd.merge(data, temp2[['user_id', 'last_avg_diff', 'last_second_diff']], how='left', on=['user_id'])   # 两个中间生成的特征是否要加入训练？？
     data = data.fillna(-1)
