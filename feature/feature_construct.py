@@ -70,16 +70,32 @@ def act_features(data, day):
     data = pd.merge(data, last_act, how='left', on=['user_id'])
     data['act_diff_target_day'] = day - data['last_act_day']
     data = data.fillna(-1)
-    for i in [1, 3, 5, 7, 9, 11, 14]:
+    for i in [1, 2, 3, 5, 7, 9, 11, 14]:
         temp = act.loc[act.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'act_in_'+str(i)})
         data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(0)
+    # 每日act数目特征
     temp = act.groupby(['user_id', 'day']).size().rename('day_act_times').reset_index()
     act_temp = pd.merge(act, temp, how='left', on=['user_id', 'day'])
     temp = act_temp.drop_duplicates(['user_id', 'day']).groupby(['user_id'])['day_act_times'].agg({'day_act_max': 'max', 'day_act_min': 'min', 'day_act_avg': 'sum', 'day_act_var': 'var', 'act_day_count': 'size'}).reset_index()
     temp['day_act_avg'] = temp['day_act_avg'] / temp['act_day_count']
+    temp['day_act_var/n'] = temp['day_act_var'] / temp['act_day_count']
     data = pd.merge(data, temp, how='left', on=['user_id'])
+    # 错误提取的特征
+    # data['last_avg_diff'] = data['act_in_1'] - data['day_act_avg']
+    # data['last_second_diff'] = data['act_in_1']*2 - data['act_in_2']
+    del (data['act_in_2'])
+
+    # 每日act数目差值特征
+    temp2 = act_temp.drop_duplicates(['user_id', 'day'], keep='last').sort_values(['user_id', 'day'])
+    temp2['last_day_act_times'] = temp2.sort_values(['user_id', 'day']).groupby(['user_id'])['day_act_times'].shift(1)
+    temp2['last_second_diff'] = temp2['day_act_times'] - temp2['last_day_act_times']
+    temp2 = pd.merge(temp2, temp[['user_id', 'day_act_avg']], how='left', on=['user_id'])
+    temp2['last_avg_diff'] = temp2['day_act_times'] - temp2['day_act_avg']
+    temp2 = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last')
+    data = pd.merge(data, temp2[['user_id', 'last_avg_diff', 'last_second_diff']], how='left', on=['user_id'])   # 两个中间生成的特征是否要加入训练？？
     data = data.fillna(-1)
+    # 每日act_diff 特征 即当天和前一天act数量差值的特征
     return data
 
 
