@@ -71,9 +71,13 @@ if __name__ == '__main__':
 
     features = [c for c in train if
                 c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio', 'device_count',
-                          'day_act_var/n']]
+                          'day_act_var/n', 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',
+                          'last_second_diff', 'last_avg_diff',
+                           'last_second_trend', 'second_trend_count', 'second_trend_ratio', # 'last_avg_trend', 'avg_trend_count', 'avg_trend_ratio',
+                          ]]
+    # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
-
+    # 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',  每日act数目差值特征组
     offline(features)
     online(features)
 

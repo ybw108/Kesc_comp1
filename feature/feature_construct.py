@@ -70,7 +70,7 @@ def act_features(data, day):
     data = pd.merge(data, last_act, how='left', on=['user_id'])
     data['act_diff_target_day'] = day - data['last_act_day']
     data = data.fillna(-1)
-    for i in [1, 2, 3, 5, 7, 9, 11, 14]:
+    for i in [1, 3, 5, 7, 9, 11, 14]:
         temp = act.loc[act.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'act_in_'+str(i)})
         data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(0)
@@ -81,10 +81,6 @@ def act_features(data, day):
     temp['day_act_avg'] = temp['day_act_avg'] / temp['act_day_count']
     temp['day_act_var/n'] = temp['day_act_var'] / temp['act_day_count']
     data = pd.merge(data, temp, how='left', on=['user_id'])
-    # 错误提取的特征
-    # data['last_avg_diff'] = data['act_in_1'] - data['day_act_avg']
-    # data['last_second_diff'] = data['act_in_1']*2 - data['act_in_2']
-    del (data['act_in_2'])
 
     # 每日act数目差值特征
     temp2 = act_temp.drop_duplicates(['user_id', 'day'], keep='last').sort_values(['user_id', 'day'])
@@ -92,16 +88,41 @@ def act_features(data, day):
     temp2['last_second_diff'] = temp2['day_act_times'] - temp2['last_day_act_times']
     temp2 = pd.merge(temp2, temp[['user_id', 'day_act_avg']], how='left', on=['user_id'])
     temp2['last_avg_diff'] = temp2['day_act_times'] - temp2['day_act_avg']
+    temp2['last_second_trend'] = temp2['last_second_diff'].apply(lambda x: 1 if x > 0 else 0)
+    temp2['last_avg_trend'] = temp2['last_avg_diff'].apply(lambda x: 1 if x > 0 else 0)
     temp = temp2.groupby(['user_id'])['last_second_diff'].agg(
         {'last_second_diff_max': 'max', 'last_second_diff_min': 'min', 'last_second_diff_avg': 'sum', 'last_second_diff_var': 'var', 'act_day_count': 'size'}).reset_index()
     temp['last_second_diff_avg'] = temp['last_second_diff_avg']/temp['act_day_count']
     temp['last_second_diff_var/n'] = temp['last_second_diff_var']/temp['act_day_count']
+    # 每日act数目差值趋势特征
+    temp['last_second_trend'] = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last').reset_index()['last_second_trend']  # 最后一天和前一天相比的趋势
+    temp['last_avg_trend'] = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last').reset_index()['last_avg_trend']        # 最后一天和平均数相比的趋势
+    temp['second_trend_ratio'] = temp2.groupby(['user_id'])['last_second_trend'].mean().reset_index()['last_second_trend']                          # 最后与前一天呈增长趋势的天数占有act行为的天数的比例
+    temp['avg_trend_ratio'] = temp2.groupby(['user_id'])['last_avg_trend'].mean().reset_index()['last_avg_trend']                                   # 最后与平均值呈增长趋势的天数占有act行为的天数的比例
+
+    temp3 = temp2.loc[temp2.last_second_trend == 1].groupby(['user_id'])['last_second_trend'].size().rename('second_trend_count').reset_index()
+    temp = pd.merge(temp, temp3, how='left', on=['user_id'])
+    temp3 = temp2.loc[temp2.last_avg_trend == 1].groupby(['user_id'])['last_avg_trend'].size().rename('avg_trend_count').reset_index()
+    temp = pd.merge(temp, temp3, how='left', on=['user_id'])
+    temp['second_trend_count'] = temp['second_trend_count'].fillna(0)
+    temp['avg_trend_count'] = temp['avg_trend_count'].fillna(0)
+
     del(data['act_day_count'])
     data = pd.merge(data, temp, how='left', on=['user_id'])
     temp2 = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last')
     data = pd.merge(data, temp2[['user_id', 'last_avg_diff', 'last_second_diff']], how='left', on=['user_id'])   # 两个中间生成的特征是否要加入训练？？
+
+    # data['last_second_trend'] = data['last_second_trend'].fillna(0)
+    # data['last_avg_trend'] = data['last_avg_trend'].fillna(0)
+    # data['second_trend_count'] = data['second_trend_count'].fillna(0)
+    # data['avg_trend_count'] = data['avg_trend_count'].fillna(0)
+    # data['second_trend_ratio'] = data['second_trend_ratio'].fillna(0)
+    # data['avg_trend_ratio'] = data['avg_trend_ratio'].fillna(0)
+
+
     data = data.fillna(-1)
     # 每日act_diff 特征 即当天和前一天act数量差值的特征
+    gc.collect()
     return data
 
 
