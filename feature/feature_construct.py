@@ -127,7 +127,7 @@ def act_features(data, day):
 
 
 def create_features(data, day):
-    last_create = create.sort_values(by=['day']).drop_duplicates(['user_id'], keep='last').rename(columns={0: 'user_id', 'day': 'last_create_day'})
+    last_create = create.sort_values(by=['day']).drop_duplicates(['user_id'], keep='last').rename(columns={0: 'user_id','day': 'last_create_day'})
     data = pd.merge(data, last_create, how='left', on=['user_id'])
     data['create_diff_target_day'] = day - data['last_create_day']
     data = data.fillna(-1)
@@ -135,6 +135,20 @@ def create_features(data, day):
         temp = create.loc[create.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'create_in_'+str(i)})
         data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(0)
+    # create时间差特征
+    create['last_create_day'] = create.sort_values(['user_id', 'day']).groupby(['user_id'])['day'].shift(1)
+    create['create_diff'] = create['day'] - create['last_create_day'] - 1
+    del(create['last_create_day'])
+    temp = create.groupby(['user_id'])['create_diff'].agg({'create_diff_max': 'max', 'create_diff_min': 'min', 'create_diff_avg': 'sum', 'create_diff_var': 'var', 'total_create_count': 'size'}).reset_index()
+    temp['create_diff_avg'] = temp['create_diff_avg']/temp['total_create_count']
+    # temp2 = create.loc[create.create_diff == 0].groupby(['user_id'])['create_diff'].size().reset_index().rename(columns={'launch_diff': 'continuous_launch_times'})
+    # temp = pd.merge(temp, temp2, how='left', on=['user_id'])
+    # temp['continuous_launch_ratio'] = temp['continuous_launch_times']/temp['total_launch_count']
+    data = pd.merge(data, temp, how='left', on=['user_id'])
+    # data['continuous_launch_ratio'] = data['continuous_launch_ratio'].fillna(0)
+    # del(data['continuous_launch_times'])
+    data = data.fillna(-1)
+
     return data
 
 
