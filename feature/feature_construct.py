@@ -85,9 +85,17 @@ def act_features(data, day):
     temp = act.groupby(['user_id', 'day']).size().rename('day_act_times').reset_index()
     act_temp = pd.merge(act, temp, how='left', on=['user_id', 'day'])
     temp = act_temp.drop_duplicates(['user_id', 'day']).groupby(['user_id'])['day_act_times'].agg({'day_act_max': 'max', 'day_act_min': 'min', 'day_act_avg': 'sum', 'day_act_var': 'var', 'act_day_count': 'size'}).reset_index()
+
+    # 注册时间内平均每天act数目
+    temp = pd.merge(temp, data[['user_id', 'register_length']], how='left', on=['user_id'])
+    temp['register_length'] = temp['register_length'].apply(lambda x: 16 if x > 16 else x)
+    temp['avg_act_after_reg'] = temp['day_act_avg'] / temp['register_length']
     temp['day_act_avg'] = temp['day_act_avg'] / temp['act_day_count']
     # temp['day_act_var/n'] = temp['day_act_var'] / temp['act_day_count']
+    del(temp['register_length'])
     data = pd.merge(data, temp, how='left', on=['user_id'])
+
+
 
     # 每日act数目差值特征
     temp2 = act_temp.drop_duplicates(['user_id', 'day'], keep='last').sort_values(['user_id', 'day'])
