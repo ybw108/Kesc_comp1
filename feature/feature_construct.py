@@ -53,10 +53,17 @@ def launch_features(data, day):
     launch['launch_diff'] = launch['day'] - launch['last_launch_day'] - 1
     del(launch['last_launch_day'])
     temp = launch.groupby(['user_id'])['launch_diff'].agg({'launch_diff_max': 'max', 'launch_diff_min': 'min', 'launch_diff_avg': 'sum', 'launch_diff_var': 'var', 'total_launch_count': 'size'}).reset_index()
-    temp['launch_diff_avg'] = temp['launch_diff_avg']/temp['total_launch_count']
+    temp['launch_diff_avg'] = temp['launch_diff_avg']/temp['total_launch_count']   # 这里要不要减一？？？
+
+    # 注册时间内平均每天启动次数
+    temp = pd.merge(temp, data[['user_id', 'register_length']], how='left', on=['user_id'])
+    temp['register_length'] = temp['register_length'].apply(lambda x: 16 if x > 16 else x)   # 注册时长超过窗口长度的，降为窗口长度
+    temp['avg_launch_after_reg'] = temp['total_launch_count'] / temp['register_length']      # 注册后平均每天启动次数
+    del(temp['register_length'])
+
     temp2 = launch.loc[launch.launch_diff == 0].groupby(['user_id'])['launch_diff'].size().reset_index().rename(columns={'launch_diff': 'continuous_launch_times'})
     temp = pd.merge(temp, temp2, how='left', on=['user_id'])
-    temp['continuous_launch_ratio'] = temp['continuous_launch_times']/temp['total_launch_count']
+    temp['continuous_launch_ratio'] = temp['continuous_launch_times']/(temp['total_launch_count'] - 1)
     data = pd.merge(data, temp, how='left', on=['user_id'])
     data['continuous_launch_ratio'] = data['continuous_launch_ratio'].fillna(0)
     del(data['continuous_launch_times'])
@@ -79,7 +86,7 @@ def act_features(data, day):
     act_temp = pd.merge(act, temp, how='left', on=['user_id', 'day'])
     temp = act_temp.drop_duplicates(['user_id', 'day']).groupby(['user_id'])['day_act_times'].agg({'day_act_max': 'max', 'day_act_min': 'min', 'day_act_avg': 'sum', 'day_act_var': 'var', 'act_day_count': 'size'}).reset_index()
     temp['day_act_avg'] = temp['day_act_avg'] / temp['act_day_count']
-    temp['day_act_var/n'] = temp['day_act_var'] / temp['act_day_count']
+    # temp['day_act_var/n'] = temp['day_act_var'] / temp['act_day_count']
     data = pd.merge(data, temp, how='left', on=['user_id'])
 
     # 每日act数目差值特征
@@ -93,7 +100,7 @@ def act_features(data, day):
     temp = temp2.groupby(['user_id'])['last_second_diff'].agg(
         {'last_second_diff_max': 'max', 'last_second_diff_min': 'min', 'last_second_diff_avg': 'sum', 'last_second_diff_var': 'var', 'act_day_count': 'size'}).reset_index()
     temp['last_second_diff_avg'] = temp['last_second_diff_avg']/temp['act_day_count']
-    temp['last_second_diff_var/n'] = temp['last_second_diff_var']/temp['act_day_count']
+    # temp['last_second_diff_var/n'] = temp['last_second_diff_var']/temp['act_day_count']
     # 每日act数目差值趋势特征
     temp['last_second_trend'] = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last').reset_index()['last_second_trend']  # 最后一天和前一天相比的趋势
     temp['last_avg_trend'] = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last').reset_index()['last_avg_trend']        # 最后一天和平均数相比的趋势
@@ -121,7 +128,6 @@ def act_features(data, day):
 
 
     data = data.fillna(-1)
-    # 每日act_diff 特征 即当天和前一天act数量差值的特征
     gc.collect()
     return data
 
@@ -141,12 +147,7 @@ def create_features(data, day):
     del(create['last_create_day'])
     temp = create.groupby(['user_id'])['create_diff'].agg({'create_diff_max': 'max', 'create_diff_min': 'min', 'create_diff_avg': 'sum', 'create_diff_var': 'var', 'total_create_count': 'size'}).reset_index()
     temp['create_diff_avg'] = temp['create_diff_avg']/temp['total_create_count']
-    # temp2 = create.loc[create.create_diff == 0].groupby(['user_id'])['create_diff'].size().reset_index().rename(columns={'launch_diff': 'continuous_launch_times'})
-    # temp = pd.merge(temp, temp2, how='left', on=['user_id'])
-    # temp['continuous_launch_ratio'] = temp['continuous_launch_times']/temp['total_launch_count']
     data = pd.merge(data, temp, how='left', on=['user_id'])
-    # data['continuous_launch_ratio'] = data['continuous_launch_ratio'].fillna(0)
-    # del(data['continuous_launch_times'])
     data = data.fillna(-1)
 
     return data

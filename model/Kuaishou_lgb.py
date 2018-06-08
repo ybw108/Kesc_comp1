@@ -9,7 +9,7 @@ from sklearn import metrics
 
 def offline(features):
     # train = pd.read_csv('../data/train.csv', index_col=False)
-    kf = KFold(n_splits=10, shuffle=True, random_state=2018)
+    kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=2018)
     X = train[features]
     y = train['label']
     best_score = []
@@ -17,7 +17,7 @@ def offline(features):
     f1_score = []
     best_cutoff = 0
     feat_imp = np.zeros((1, train[features].shape[1]))
-    for train_index, test_index in kf.split(X):
+    for train_index, test_index in kf.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         gbm = lgb.LGBMRegressor(objective='binary', n_estimators=2000, seed=2018)
@@ -45,6 +45,7 @@ def offline(features):
 
     used_features = [i for i in train[features].columns]
     feat_imp = pd.Series(feat_imp.reshape(-1), used_features).sort_values(ascending=False)
+    feat_imp = (feat_imp/feat_imp.sum())*100
     print(feat_imp, 'number_of_features: ', len(feat_imp))
     print(best_score, '\n', f1_score, '\n', best_iteration)
     print('average of best auc: ' + str(sum(best_score)/len(best_score)))
@@ -72,8 +73,9 @@ if __name__ == '__main__':
     features = [c for c in train if
                 c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio', 'device_count',
                           'day_act_var/n', 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',
-                          'last_second_diff', 'last_avg_diff',
-                           'last_second_trend', 'second_trend_count', 'second_trend_ratio', # 'last_avg_trend', 'avg_trend_count', 'avg_trend_ratio',
+                          'last_second_diff', 'last_avg_diff', #'register_day',
+                          'last_second_trend', 'second_trend_count', 'second_trend_ratio',  'last_avg_trend', 'avg_trend_count', 'avg_trend_ratio',
+                          'create_diff_max', 'create_diff_min', 'create_diff_var', 'create_diff_avg', 'total_create_count'
                           ]]
     # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
