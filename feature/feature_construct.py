@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import gc
 from math import log
 
@@ -8,6 +9,28 @@ from math import log
 #     if count == 1:
 #         row['device_type'] = 99999
 #     return row
+
+
+def get_lx_day(now):
+    k1 = np.array(now)
+    k2 = np.where(np.diff(k1) == 1)[0]
+    i = 0
+    ans = []
+    while i < len(k2)-1:
+        l1 = 1
+        while k2[i+1]-k2[i] == 1:
+            l1 += 1
+            i += 1
+            if i == len(k2)-1:
+                break
+        if l1 == 1:
+            i += 1
+            ans.append(2)
+        else:
+            ans.append(l1+1)
+    if len(k2) == 1:
+        ans.append(2)
+    return ans
 
 
 def read_data(first_day, last_day):
@@ -48,6 +71,14 @@ def launch_features(data, day):
         temp = launch.loc[launch.day >= day-int(i)].groupby(['user_id']).size().reset_index().rename(columns={0: 'launch_in_'+str(i)})
         data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(0)
+    # 启动日期距离考察日的距离特征
+    launch['distance'] = day - launch['day']    # 日期or和考察日的距离？
+    temp = launch.groupby(['user_id'])['distance'].agg(
+        {'launch_day_max': 'max', 'launch_day_min': 'min', 'launch_day_avg': 'sum', 'launch_day_var': 'var', 'launch_day_count': 'size'}).reset_index()
+    temp['launch_day_avg'] = temp['launch_day_avg']/temp['launch_day_count']    # 日期的暴力加和除以启动次数
+    del(temp['launch_day_count'])
+    data = pd.merge(data, temp, how='left', on=['user_id'])
+
     # 启动时间差特征
     launch['last_launch_day'] = launch.sort_values(['user_id', 'day']).groupby(['user_id'])['day'].shift(1)
     launch['launch_diff'] = launch['day'] - launch['last_launch_day'] - 1
