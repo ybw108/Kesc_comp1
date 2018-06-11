@@ -74,11 +74,15 @@ if __name__ == '__main__':
                 c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio',
                           'day_act_var/n', 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',
                           'last_second_diff', 'last_avg_diff',
-                          'last_second_trend', 'second_trend_count', 'second_trend_ratio',  'last_avg_trend', 'avg_trend_count', 'avg_trend_ratio',
+                          'last_second_trend', 'second_trend_count', 'second_trend_ratio', 'last_avg_trend', 'avg_trend_count', 'avg_trend_ratio',
                           'create_diff_max', 'create_diff_min', 'create_diff_var', 'create_diff_avg', 'total_create_count',
-                          # 'create_in_1', 'create_in_3', 'create_in_5', 'create_in_7', 'create_in_9', 'create_in_11', 'create_in_14', 'launch_diff_min','launch_diff_max'
-                          'launch_day_max', 'launch_day_min',  'launch_day_var', 'launch_day_avg',
+                          # 重要性小于 1%的特征
+                          # 'create_in_1', 'create_in_3', 'create_in_5', 'create_in_7', 'create_in_9', 'create_in_11', 'create_in_14', 'launch_diff_min', 'launch_diff_max', 'launch_diff_median',
+                          # 重要性高但导致过拟合？（目前未确定）的特征
+                          'launch_day_avg', 'launch_day_var',
                           'avg_launch_after_reg', 'avg_act_after_reg',
+                          # 还没有试过的特征
+                          'launch_day_median', 'day_act_median', 'launch_diff_median',
                           ]]
     # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',

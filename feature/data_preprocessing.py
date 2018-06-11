@@ -1,6 +1,6 @@
 import pandas as pd
 import gc
-
+from sklearn.preprocessing import LabelEncoder
 
 def merge_device_type(row):
     count = row['device_count']
@@ -45,6 +45,13 @@ if __name__ == '__main__':
     # temp = user_reg.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
     # user_reg = pd.merge(user_reg, temp, 'left', ['device_type'])
     # user_reg = user_reg.apply(merge_device_type, axis=1)
+
+    # device_type重新编码、组合再编码
+    lbl1 = LabelEncoder()
+    user_reg['device_type'] = lbl1.fit_transform(user_reg['device_type'])
+    user_reg['device_register_type'] = user_reg['device_type'].astype(str) + '_' + user_reg['register_type'].astype(str)
+    lbl2 = LabelEncoder()
+    user_reg['device_register_type'] = lbl2.fit_transform(user_reg['device_register_type'])
 
     # 输出
     train_1.to_csv('../data/train_1_list.csv', index=False)

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import gc
 from math import log
-
+from sklearn.preprocessing import LabelEncoder
 
 # def merge_device_type(row):
 #     count = row['device_count']
@@ -54,6 +54,7 @@ def reg_features(data, day):
     # data = data.apply(merge_device_type, axis=1)
     # del(data['device_count'])
     # data['device_count2'] = data['device_count'].apply(lambda x: log(1 + x))
+
     # 注册时长
     data['register_length'] = day - data['register_day']
 
@@ -72,9 +73,9 @@ def launch_features(data, day):
         data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(0)
     # 启动日期距离考察日的距离特征
-    launch['distance'] = day - launch['day']    # 日期or和考察日的距离？
-    temp = launch.groupby(['user_id'])['distance'].agg(
-        {'launch_day_max': 'max', 'launch_day_min': 'min', 'launch_day_avg': 'sum', 'launch_day_var': 'var', 'launch_day_count': 'size'}).reset_index()
+    # launch['distance'] = day - launch['day']    # 日期or和考察日的距离？
+    temp = launch.groupby(['user_id'])['day'].agg(
+        {'launch_day_median': 'median', 'launch_day_avg': 'sum', 'launch_day_var': 'var', 'launch_day_count': 'size'}).reset_index()
     temp['launch_day_avg'] = temp['launch_day_avg']/temp['launch_day_count']    # 日期的暴力加和除以启动次数
     del(temp['launch_day_count'])
     data = pd.merge(data, temp, how='left', on=['user_id'])
@@ -83,7 +84,7 @@ def launch_features(data, day):
     launch['last_launch_day'] = launch.sort_values(['user_id', 'day']).groupby(['user_id'])['day'].shift(1)
     launch['launch_diff'] = launch['day'] - launch['last_launch_day'] - 1
     del(launch['last_launch_day'])
-    temp = launch.groupby(['user_id'])['launch_diff'].agg({'launch_diff_max': 'max', 'launch_diff_min': 'min', 'launch_diff_avg': 'sum', 'launch_diff_var': 'var', 'total_launch_count': 'size'}).reset_index()
+    temp = launch.groupby(['user_id'])['launch_diff'].agg({'launch_diff_max': 'max', 'launch_diff_min': 'min', 'launch_diff_avg': 'sum', 'launch_diff_median': 'median', 'launch_diff_var': 'var', 'total_launch_count': 'size'}).reset_index()
     temp['launch_diff_avg'] = temp['launch_diff_avg']/temp['total_launch_count']   # 这里要不要减一？？？
 
     # 注册时间内平均每天启动次数
@@ -115,7 +116,7 @@ def act_features(data, day):
     # 每日act数目特征
     temp = act.groupby(['user_id', 'day']).size().rename('day_act_times').reset_index()
     act_temp = pd.merge(act, temp, how='left', on=['user_id', 'day'])
-    temp = act_temp.drop_duplicates(['user_id', 'day']).groupby(['user_id'])['day_act_times'].agg({'day_act_max': 'max', 'day_act_min': 'min', 'day_act_avg': 'sum', 'day_act_var': 'var', 'act_day_count': 'size'}).reset_index()
+    temp = act_temp.drop_duplicates(['user_id', 'day']).groupby(['user_id'])['day_act_times'].agg({'day_act_max': 'max', 'day_act_min': 'min', 'day_act_avg': 'sum', 'day_act_median': 'median', 'day_act_var': 'var', 'act_day_count': 'size'}).reset_index()
 
     # 注册时间内平均每天act数目
     temp = pd.merge(temp, data[['user_id', 'register_length']], how='left', on=['user_id'])
@@ -125,8 +126,6 @@ def act_features(data, day):
     # temp['day_act_var/n'] = temp['day_act_var'] / temp['act_day_count']
     del(temp['register_length'])
     data = pd.merge(data, temp, how='left', on=['user_id'])
-
-
 
     # 每日act数目差值特征
     temp2 = act_temp.drop_duplicates(['user_id', 'day'], keep='last').sort_values(['user_id', 'day'])
@@ -164,7 +163,6 @@ def act_features(data, day):
     # data['avg_trend_count'] = data['avg_trend_count'].fillna(0)
     # data['second_trend_ratio'] = data['second_trend_ratio'].fillna(0)
     # data['avg_trend_ratio'] = data['avg_trend_ratio'].fillna(0)
-
 
     data = data.fillna(-1)
     gc.collect()
