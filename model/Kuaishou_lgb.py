@@ -40,7 +40,7 @@ def offline(features):
         #     f1 = metrics.f1_score(y_test, y_pred)
         # f1_score.append(f1)
 
-        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.398).astype(int)
+        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.404).astype(int)
         f1_score.append(metrics.f1_score(y_test, y_pred))
 
     used_features = [i for i in train[features].columns]

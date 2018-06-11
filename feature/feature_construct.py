@@ -49,12 +49,17 @@ def reg_features(data, day):
     data = pd.merge(data, user_reg, how='left', on=['user_id'])
     # 合并出现次数过少的项
     data['register_type'] = data['register_type'].apply(lambda x: 9 if x >= 9 else x)
-    # temp = data.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
-    # data = pd.merge(data, temp, 'left', ['device_type'])
-    # data = data.apply(merge_device_type, axis=1)
-    # del(data['device_count'])
-    # data['device_count2'] = data['device_count'].apply(lambda x: log(1 + x))
 
+    # temp = data.groupby(['device_type']).size().reset_index().rename(columns={0: 'device_count'})
+    # temp = list(temp.sort_values(['device_count'], ascending=False)['device_type'].head(10))
+    # for i in temp:
+    #     data['is_device_type_'+str(i)] = data['device_type'].apply(lambda x: 1 if x == int(i) else 0)
+    #
+    # temp = data.groupby(['device_reg_type']).size().reset_index().rename(columns={0: 'device_reg_count'})
+    # temp = list(temp.sort_values(['device_reg_count'], ascending=False)['device_reg_type'].head(10))
+    # for i in temp:
+    #     data['is_device_reg_type_'+str(i)] = data['device_reg_type'].apply(lambda x: 1 if x == int(i) else 0)
+    # data['device_count2'] = data['device_count'].apply(lambda x: log(1 + x))
     # 注册时长
     data['register_length'] = day - data['register_day']
 
