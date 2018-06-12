@@ -40,13 +40,14 @@ def offline(features):
         #     f1 = metrics.f1_score(y_test, y_pred)
         # f1_score.append(f1)
 
-        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.404).astype(int)
+        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.398).astype(int)
         f1_score.append(metrics.f1_score(y_test, y_pred))
 
     used_features = [i for i in train[features].columns]
     feat_imp = pd.Series(feat_imp.reshape(-1), used_features).sort_values(ascending=False)
     feat_imp = (feat_imp/feat_imp.sum())*100
     print(feat_imp, 'number_of_features: ', len(feat_imp))
+    feat_imp.to_csv('../result/feat_imp.csv')
     print(best_score, '\n', f1_score, '\n', best_iteration)
     print('average of best auc: ' + str(sum(best_score)/len(best_score)))
     print('average of best f1_score: ', str(sum(f1_score)/len(f1_score)))
@@ -80,9 +81,9 @@ if __name__ == '__main__':
                           # 'create_in_1', 'create_in_3', 'create_in_5', 'create_in_7', 'create_in_9', 'create_in_11', 'create_in_14', 'launch_diff_min', 'launch_diff_max', 'launch_diff_median',
                           # 重要性高但导致过拟合？（目前未确定）的特征
                           'launch_day_avg', 'launch_day_var',
-                          'avg_launch_after_reg', 'avg_act_after_reg',
+                          'avg_launch_after_reg', 'avg_act_after_reg', 'avg_adv_act_after_reg', 'device_reg_type',
                           # 还没有试过的特征
-                          'launch_day_median', 'day_act_median', 'launch_diff_median',
+                          'launch_day_median', 'day_act_median', 'launch_diff_median', 'day_adv_act_median', 'day_act_max_distance', 'day_adv_act_max_distance'
                           ]]
     # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
