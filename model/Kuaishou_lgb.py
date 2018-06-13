@@ -40,7 +40,7 @@ def offline(features):
         #     f1 = metrics.f1_score(y_test, y_pred)
         # f1_score.append(f1)
 
-        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.398).astype(int)
+        y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= 0.396).astype(int)
         f1_score.append(metrics.f1_score(y_test, y_pred))
 
     used_features = [i for i in train[features].columns]
@@ -62,7 +62,7 @@ def online(features):
     gbm.fit(train[features], train['label'], feature_name=features, categorical_feature=['register_type'])
     test['predicted_score'] = gbm.predict(test[features])
 
-    test = test[test['predicted_score'] >= 0.398]
+    test = test[test['predicted_score'] >= 0.396]
     test[['user_id']].to_csv('../result/result.csv', header=False, index=False, sep=' ')
 
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     train = pd.concat([train_1, train_2])
 
     features = [c for c in train if
-                c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio',
+                c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio', 'continuous_launch_times'
                           'day_act_var/n', 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',
                           'last_second_diff', 'last_avg_diff',
                           'last_second_trend', 'second_trend_count', 'second_trend_ratio', 'last_avg_trend', 'avg_trend_count', 'avg_trend_ratio',
@@ -80,10 +80,11 @@ if __name__ == '__main__':
                           # 重要性小于 1%的特征
                           # 'create_in_1', 'create_in_3', 'create_in_5', 'create_in_7', 'create_in_9', 'create_in_11', 'create_in_14', 'launch_diff_min', 'launch_diff_max', 'launch_diff_median',
                           # 重要性高但导致过拟合？（目前未确定）的特征
-                          'launch_day_avg', 'launch_day_var',
-                          'avg_launch_after_reg', 'avg_act_after_reg', 'avg_adv_act_after_reg', 'device_reg_type',
+                          'launch_day_var', 'launch_day_avg', 'avg_launch_after_reg',
+                          'avg_act_after_reg', 'avg_adv_act_after_reg', 'device_reg_type',
                           # 还没有试过的特征
-                          'launch_day_median', 'day_act_median', 'launch_diff_median', 'day_adv_act_median', 'day_act_max_distance', 'day_adv_act_max_distance'
+                          'launch_day_median', 'day_act_median', 'launch_diff_median', 'day_adv_act_median', 'day_act_max_distance', 'day_adv_act_max_distance',
+                          'is_author', 'is_act_page4',
                           ]]
     # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
