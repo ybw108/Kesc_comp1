@@ -177,15 +177,15 @@ def act_features(data, day):
     temp2 = temp2.sort_values(['user_id', 'day']).drop_duplicates(['user_id'], keep='last')
     data = pd.merge(data, temp2[['user_id', 'last_avg_diff', 'last_second_diff']], how='left', on=['user_id'])   # 两个中间生成的特征是否要加入训练？？
 
-    # 发生act的日期时间差特征
-    temp = act_temp.drop_duplicates(['user_id', 'day'], keep='last').sort_values(['user_id', 'day'])
-    temp['last_act_day'] = temp.groupby(['user_id'])['day'].shift(1)
-    temp['act_diff'] = temp['day'] - temp['last_act_day'] - 1
-    del(temp['last_act_day'])
-    temp = temp.groupby(['user_id'])['act_diff'].agg({'act_diff_max': 'max', 'act_diff_min': 'min', 'act_diff_avg': 'sum', 'act_diff_var': 'var', 'total_act_count': 'size'}).reset_index()
-    temp['act_diff_avg'] = temp['act_diff_avg']/temp['total_act_count']
-    del(temp['total_act_count'])
-    data = pd.merge(data, temp, how='left', on=['user_id'])
+    # # 发生act的日期时间差特征
+    # temp = act_temp.drop_duplicates(['user_id', 'day'], keep='last').sort_values(['user_id', 'day'])
+    # temp['last_act_day'] = temp.groupby(['user_id'])['day'].shift(1)
+    # temp['act_diff'] = temp['day'] - temp['last_act_day'] - 1
+    # del(temp['last_act_day'])
+    # temp = temp.groupby(['user_id'])['act_diff'].agg({'act_diff_max': 'max', 'act_diff_min': 'min', 'act_diff_avg': 'sum', 'act_diff_var': 'var', 'total_act_count': 'size'}).reset_index()
+    # temp['act_diff_avg'] = temp['act_diff_avg']/temp['total_act_count']
+    # del(temp['total_act_count'])
+    # data = pd.merge(data, temp, how='left', on=['user_id'])
 
     # data['last_second_trend'] = data['last_second_trend'].fillna(0)
     # data['last_avg_trend'] = data['last_avg_trend'].fillna(0)
