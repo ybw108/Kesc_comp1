@@ -14,28 +14,33 @@ def online(features):
     y = train['label']
     X = np.array(X)
     y = np.array(y)
-    gcf = gcForest(shape_1X=39, n_mgsRFtree=100, window=10, stride=2,
-                 cascade_test_size=0.2, n_cascadeRF=4, n_cascadeRFtree=101, cascade_layer=np.inf,
-                 min_samples_mgs=0.1, min_samples_cascade=0.1, tolerance=0.0,)
-    gcf.fit(X, y)
-    #gcf = gcForest(tolerance=0.0, min_samples_cascade=20)
-    #_ = gcf.cascade_forest(train[features], train['label'])
-
     X_test = test[features].fillna(-1)
     X_test = np.array(X_test)
-    pred_proba = gcf.predict_proba(X_test)
-    test['predict'] = pred_proba[:, 1]
-    # preds = np.argmax(tmp, axis=1)
-    test[['user_id', 'predict']].to_csv('../result/gcforest_predict.csv', index=False)
-    #tmp = np.mean(pred_proba, axis=0)
-    #preds = np.argmax(tmp, axis=1)
+
+    # gcf = gcForest(shape_1X=39, n_mgsRFtree=100, window=10, stride=2,
+    #              cascade_test_size=0.2, n_cascadeRF=4, n_cascadeRFtree=101, cascade_layer=np.inf,
+    #              min_samples_mgs=0.1, min_samples_cascade=0.1, tolerance=0.0,)
+    # gcf.fit(X, y)
+    #
+
+    # pred_proba = gcf.predict_proba(X_test)
+    # test['predict'] = pred_proba[:, 1]
+    # test[['user_id', 'predict']].to_csv('../result/gcforest_predict.csv', index=False)
+
+    gcf = gcForest(tolerance=0.0, n_cascadeRF=8, min_samples_cascade=20)
+    _ = gcf.cascade_forest(train[features], train['label'])
+    pred_proba = gcf.cascade_forest(X_test)
+    tmp = np.mean(pred_proba, axis=0)
+    test['predict'] = tmp[:, 1]
+    test[['user_id', 'predict']].to_csv('../result/gcf_result.csv', index=False)
+
 
 
 if __name__ == '__main__':
-    train_1 = pd.read_csv('../data/train_1.csv', index_col=False)
-    train_2 = pd.read_csv('../data/train_2.csv', index_col=False)
+    train_1 = pd.read_csv('../data/train_1_af.csv', index_col=False)
+    train_2 = pd.read_csv('../data/train_2_af.csv', index_col=False)
     train = pd.concat([train_1, train_2])
-    test = pd.read_csv('../data/test.csv', index_col=False)
+    test = pd.read_csv('../data/test_af.csv', index_col=False)
     features = [c for c in train if
                 c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio', 'continuous_launch_times'
                           'day_act_var/n', 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',
@@ -58,6 +63,6 @@ if __name__ == '__main__':
     #online(features)
 
     result = pd.read_csv('../result/gcforest_predict.csv', index_col=False)
-    result = result.sort_values(['predict'], ascending=False).head(24900)
-    result['user_id'].to_csv('../result/gcforest_result.csv', index=False, header=False)
+    result = result.sort_values(['predict'], ascending=False).head(26000)
+    result['user_id'].to_csv('../result/gcf_sub.csv', index=False, header=False)
 
