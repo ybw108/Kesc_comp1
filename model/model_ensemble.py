@@ -15,54 +15,44 @@ def offline(features):
     f1_score = []
     best_cutoff = 0
     feat_imp = np.zeros((1, train[features].shape[1]))
+    y_valid = pd.DataFrame()
     for train_index, test_index in kf.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-        gbm = xgb.XGBClassifier(objective='binary:logistic', n_estimators=2000, seed=2018)
-        model = gbm.fit(X_train, y_train, eval_set=[(X_test, y_test)], eval_metric='auc', early_stopping_rounds=150)
-        best_score.append(np.max(model.evals_result_['validation_0']['auc']))
-        best_iteration.append(model.best_iteration)
-        feat_imp_temp = model.feature_importances_
-        feat_imp = feat_imp + feat_imp_temp
-        # if best_cutoff == 0:
-        #     i_range = np.arange(0.35, 0.55, 0.01)
-        #     for i in i_range:
-        #         y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= i).astype(int)
-        #         f1 = metrics.f1_score(y_test, y_pred)
-        #         if f1 > best_f1:
-        #             best_f1 = f1
-        #             best_cutoff = i
-        # else:
-        #     y_pred = (gbm.predict(X_test, num_iteration=model.best_iteration_) >= best_cutoff).astype(int)
-        #     f1 = metrics.f1_score(y_test, y_pred)
-        # f1_score.append(f1)
 
-        y_pred = (gbm.predict_proba(X_test, ntree_limit=model.best_iteration)[:, 1] >= 0.396).astype(int)
-        f1_score.append(metrics.f1_score(y_test, y_pred))
+        gbm1 = xgb.XGBClassifier(objective='binary:logistic', n_estimators=2000, seed=2018)
+        model1 = gbm1.fit(X_train, y_train, eval_set=[(X_test, y_test)], eval_metric='auc', early_stopping_rounds=150)
+        gbm2 = lgb.LGBMClassifier(objective='binary', n_estimators=2000, seed=2018)
+        model2 = gbm2.fit(X_train, y_train, feature_name=features, categorical_feature=['register_type'], eval_set=[(X_test, y_test)],
+                         eval_metric='auc', early_stopping_rounds=150)
 
-    used_features = [i for i in train[features].columns]
-    feat_imp = pd.Series(feat_imp.reshape(-1), used_features).sort_values(ascending=False)
-    feat_imp = (feat_imp/feat_imp.sum())*100
-    print(feat_imp, 'number_of_features: ', len(feat_imp))
-    feat_imp.to_csv('../result/feat_imp.csv')
-    print(best_score, '\n', f1_score, '\n', best_iteration)
-    print('average of best auc: ' + str(sum(best_score)/len(best_score)))
-    print('average of best f1_score: ', str(sum(f1_score)/len(f1_score)))
-    print('average of best iteration: ' + str(sum(best_iteration)/len(best_iteration)))
+        y_test = y_test.to_frame()
+        y_test['predict1'] = gbm1.predict_proba(X_test, ntree_limit=model1.best_iteration)[:, 1]
+        y_test['predict2'] = gbm2.predict_proba(X_test, num_iteration=model2.best_iteration_)[:, 1]
+        y_valid = pd.concat([y_valid, y_test])
+
+    irange = np.arange(0.3, 0.7, 0.01)
+    ensemble_score = {}
+    for i in irange:
+        y_valid['final_predict'] = ((float(i) * y_valid['predict1'] + (1-float(i)) * y_valid['predict2']) >= 0.396).astype(int)
+        f1_score = metrics.f1_score(y_valid['label'], y_valid['final_predict'])
+        ensemble_score[i] = f1_score
+    print(max(zip(ensemble_score.values(), ensemble_score.keys())))
+
 
 
 def online(features):
+    # train = pd.read_csv('../data/train.csv', index_col=False)
     test = pd.read_csv('../data/test.csv', index_col=False)
-    gbm1 = xgb.XGBClassifier(objective='binary:logistic', n_estimators=100, seed=2018)
+    gbm1 = xgb.XGBClassifier(objective='binary:logistic', n_estimators=250, seed=2018)
     gbm1.fit(train[features], train['label'])
     test['predicted_score1'] = gbm1.predict_proba(test[features])[:, 1]
 
     gbm2 = lgb.LGBMClassifier(objective='binary', seed=2018)
     gbm2.fit(train[features], train['label'], feature_name=features, categorical_feature=['register_type'])
-    test['predicted_score2'] = gbm2.predict_proba(test[features])[:, 1]
+    test['predicted_score2'] = gbm2.predict(test[features])[:, 1]
 
-    #test = test[test['predicted_score1'] >= 0.394]
-    test = test[(0.38 * test['predicted_score1'] + 0.62 * test['predicted_score2']) >= 0.396]
+    test = test[0.5 * test['predicted_score1'] + 0.5 * test['predicted_score2'] >= 0.396]
     test[['user_id']].to_csv('../result/result.csv', header=False, index=False, sep=' ')
 
 
@@ -89,8 +79,4 @@ if __name__ == '__main__':
     # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
     # 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',  每日act数目差值特征组
-    #offline(features)
-    online(features)
-
-
-
+    offline(features)

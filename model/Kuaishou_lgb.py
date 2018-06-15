@@ -1,7 +1,5 @@
-import time
 import numpy as np
 import pandas as pd
-from sklearn.metrics import log_loss
 import lightgbm as lgb
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn import metrics
