@@ -24,6 +24,8 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+import lightgbm as lgb
+import xgboost
 
 __author__ = "Pierre-Yves Lablanche"
 __email__ = "plablanche@aims.ac.za"
@@ -401,8 +403,7 @@ class gcForest(object):
         n_jobs = getattr(self, 'n_jobs')
         prf = RandomForestClassifier(n_estimators=n_tree, max_features='sqrt',
                                      min_samples_split=min_samples, oob_score=True, n_jobs=n_jobs)
-        crf = RandomForestClassifier(n_estimators=n_tree, max_features=1,
-                                     min_samples_split=min_samples, oob_score=True, n_jobs=n_jobs)
+        crf = lgb.LGBMClassifier(n_estimators=n_tree, subsample=0.8, colsample_bytree=0.8, n_jobs=n_jobs)
 
         prf_crf_pred = []
         if y is not None:
@@ -412,8 +413,8 @@ class gcForest(object):
                 crf.fit(X, y)
                 setattr(self, '_casprf{}_{}'.format(self.n_layer, irf), prf)
                 setattr(self, '_cascrf{}_{}'.format(self.n_layer, irf), crf)
-                prf_crf_pred.append(prf.oob_decision_function_)
-                prf_crf_pred.append(crf.oob_decision_function_)
+                prf_crf_pred.append(prf.predict_proba(X))
+                prf_crf_pred.append(crf.predict_proba(X))
         elif y is None:
             for irf in range(n_cascadeRF):
                 prf = getattr(self, '_casprf{}_{}'.format(layer, irf))
