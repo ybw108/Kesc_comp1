@@ -46,12 +46,12 @@ if __name__ == '__main__':
     # user_reg = pd.merge(user_reg, temp, 'left', ['device_type'])
     # user_reg = user_reg.apply(merge_device_type, axis=1)
 
-    # device_type重新编码、组合再编码
-    lbl1 = LabelEncoder()
-    user_reg['device_type'] = lbl1.fit_transform(user_reg['device_type'])
-    user_reg['device_reg_type'] = user_reg['device_type'].astype(str) + '_' + user_reg['register_type'].astype(str)
-    lbl2 = LabelEncoder()
-    user_reg['device_reg_type'] = lbl2.fit_transform(user_reg['device_reg_type'])
+    # # device_type重新编码、组合再编码
+    # lbl1 = LabelEncoder()
+    # user_reg['device_type'] = lbl1.fit_transform(user_reg['device_type'])
+    # user_reg['device_reg_type'] = user_reg['device_type'].astype(str) + '_' + user_reg['register_type'].astype(str)
+    # lbl2 = LabelEncoder()
+    # user_reg['device_reg_type'] = lbl2.fit_transform(user_reg['device_reg_type'])
 
     # 输出
     train_1.to_csv('../data/train_1_list.csv', index=False)

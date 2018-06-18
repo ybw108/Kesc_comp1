@@ -44,7 +44,7 @@ def offline(features):
 def online(features):
     # train = pd.read_csv('../data/train.csv', index_col=False)
     test = pd.read_csv('../data/test.csv', index_col=False)
-    gbm1 = xgb.XGBClassifier(objective='binary:logistic', n_estimators=250, seed=2018)
+    gbm1 = xgb.XGBClassifier(objective='binary:logistic', seed=2018)
     gbm1.fit(train[features], train['label'])
     test['predicted_score1'] = gbm1.predict_proba(test[features])[:, 1]
 

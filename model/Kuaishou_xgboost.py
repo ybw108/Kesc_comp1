@@ -62,7 +62,7 @@ def online(features):
     test['predicted_score2'] = gbm2.predict_proba(test[features])[:, 1]
 
     #test = test[test['predicted_score1'] >= 0.394]
-    test = test[(0.38 * test['predicted_score1'] + 0.62 * test['predicted_score2']) >= 0.396]
+    test = test[(0.5 * test['predicted_score1'] + 0.5 * test['predicted_score2']) >= 0.396]
     test[['user_id']].to_csv('../result/result.csv', header=False, index=False, sep=' ')
 
 
