@@ -97,13 +97,16 @@ def launch_features(data, day):
     temp['register_length'] = temp['register_length'].apply(lambda x: 16 if x > 16 else x)   # 注册时长超过窗口长度的，降为窗口长度
     temp['avg_launch_after_reg'] = temp['total_launch_count'] / temp['register_length']      # 注册后平均每天启动次数
     del(temp['register_length'])
-
-    temp2 = launch.loc[launch.launch_diff == 0].groupby(['user_id'])['launch_diff'].size().reset_index().rename(columns={'launch_diff': 'continuous_launch_times'})
-    temp = pd.merge(temp, temp2, how='left', on=['user_id'])
-    temp['continuous_launch_ratio'] = temp['continuous_launch_times']/(temp['total_launch_count'] - 1)
     data = pd.merge(data, temp, how='left', on=['user_id'])
-    data['continuous_launch_ratio'] = data['continuous_launch_ratio'].fillna(0)
-    # del(data['continuous_launch_times'])
+
+    # # 连续启动特征
+    # temp = launch.groupby(['user_id'])['day'].apply(get_lx_day).reset_index()
+    # temp['con_max'] = temp['day'].apply(lambda x: np.max(x) if len(x) > 0 else 0)
+    # temp['con_min'] = temp['day'].apply(lambda x: np.min(x) if len(x) > 0 else 0)
+    # temp['con_sum'] = temp['day'].apply(lambda x: np.sum(x) if len(x) > 0 else 0)
+    # temp['con_var'] = temp['day'].apply(lambda x: np.std(x) if len(x) > 0 else 0)
+    # del(temp['day'])
+    # data = pd.merge(data, temp, how='left', on=['user_id'])
     data = data.fillna(-1)
 
     return data
@@ -193,7 +196,7 @@ def act_features(data, day):
     # data['avg_trend_count'] = data['avg_trend_count'].fillna(0)
     # data['second_trend_ratio'] = data['second_trend_ratio'].fillna(0)
     # data['avg_trend_ratio'] = data['avg_trend_ratio'].fillna(0)
-
+    #
     # # 每日adv_act数目特征
     # temp = act.loc[act.action_type >= 1].groupby(['user_id', 'day']).size().rename('day_adv_act_times').reset_index()
     # act_temp = pd.merge(act.loc[act.action_type >= 1], temp, how='left', on=['user_id', 'day'])
@@ -215,7 +218,7 @@ def act_features(data, day):
     # data = pd.merge(data, temp2[['user_id', 'day_adv_act_max_distance']], how='left', on=['user_id'])
     # data['day_adv_act_max_distance'] = day - data['day_adv_act_max_distance']
     # data['adv_act_ratio'] = data['day_adv_act_avg']/data['day_act_avg']
-    #
+
     # # 用户在每个page上的act特征
     # for p in [0, 1, 2, 3]:
     #     act1 = act.loc[act.page == int(p)]
@@ -227,10 +230,10 @@ def act_features(data, day):
     #     # 每日act数目特征
     #     temp = act1.groupby(['user_id', 'day']).size().rename('day_act_times'+'_page'+str(p)).reset_index()
     #     act_temp = pd.merge(act1, temp, how='left', on=['user_id', 'day'])
-    #     # temp2 = act_temp.sort_values(['user_id', 'day']).drop_duplicates(['user_id', 'day'], keep='last')
-    #     # temp3 = temp2.reset_index(drop=True).groupby(['user_id'])['day_act_times'].idxmax()                  # act 最大日的索引
-    #     # temp2 = temp2.iloc[temp3]
-    #     # temp2['day_act_max_distance'] = day - temp2['day']
+    #     temp2 = act_temp.sort_values(['user_id', 'day']).drop_duplicates(['user_id', 'day'], keep='last')
+    #     temp3 = temp2.reset_index(drop=True).groupby(['user_id'])['day_act_times'+'_page'+str(p)].idxmax()                  # act 最大日的索引
+    #     temp2 = temp2.iloc[temp3]
+    #     temp2['day_act_max_distance'] = day - temp2['day']
     #     temp = act_temp.drop_duplicates(['user_id', 'day']).groupby(['user_id'])['day_act_times'+'_page'+str(p)].agg({'day_act_max'+'_page'+str(p): 'max',
     #             'day_act_min'+'_page'+str(p): 'min', 'day_act_avg'+'_page'+str(p): 'sum', 'day_act_median'+'_page'+str(p): 'median', 'day_act_var'+'_page'+str(p): 'var', 'act_day_count'+'_page'+str(p): 'size'}).reset_index()
     #
@@ -242,18 +245,18 @@ def act_features(data, day):
     #     # temp['day_act_var/n'] = temp['day_act_var'] / temp['act_day_count']
     #     del(temp['register_length'])
     #     data = pd.merge(data, temp, how='left', on=['user_id'])
-    #     #data = pd.merge(data, temp2[['user_id', 'day_act_max_distance']], how='left', on=['user_id'])
-    #     #data['day_act_max_distance'] = day - data['day_act_max_distance']
+    #     data = pd.merge(data, temp2[['user_id', 'day_act_max_distance']], how='left', on=['user_id'])
+    #     data['day_act_max_distance'] = day - data['day_act_max_distance']
     #     data['page'+str(p)+'_ratio'] = (data['day_act_avg_page'+str(p)]*data['act_day_count_page'+str(p)])/(data['day_act_avg']*data['act_day_count'])
-    #
-    # # 是否为author，是否看过page4
-    # author_user = act.loc[act.user_id.isin(act.author_id)]
-    # author_user = author_user.drop_duplicates(['user_id'])
-    # data['is_author'] = 0
-    # data.loc[data.user_id.isin(author_user.user_id), ['is_author']] = 1
-    # is_act_page4 = act.loc[act.page == 4].drop_duplicates(['user_id'])
-    # data['is_act_page4'] = 0
-    # data.loc[data.user_id.isin(is_act_page4.user_id), ['is_act_page4']] = 1
+
+    # 是否为author，是否看过page4
+    author_user = act.loc[act.user_id.isin(act.author_id)]
+    author_user = author_user.drop_duplicates(['user_id'])
+    data['is_author'] = 0
+    data.loc[data.user_id.isin(author_user.user_id), ['is_author']] = 1
+    is_act_page4 = act.loc[act.page == 4].drop_duplicates(['user_id'])
+    data['is_act_page4'] = 0
+    data.loc[data.user_id.isin(is_act_page4.user_id), ['is_act_page4']] = 1
 
     data = data.fillna(-1)
     gc.collect()
