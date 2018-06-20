@@ -13,12 +13,19 @@ def offline(features):
     best_iteration = model.best_iteration_
     feat_imp = model.feature_importances_
 
-    y_pred = gbm.predict_proba(train_2[features], num_iteration=model.best_iteration_)[:, 1]
-    y_pred = pd.DataFrame(y_pred, columns=['predicted_score'])
-    top = y_pred.sort_values(['predicted_score'], ascending=False).head(int(len(y_pred)*0.577137))
-    y_pred.loc[y_pred.predicted_score.isin(top.predicted_score), ['predicted_score']] = 1
-    y_pred = y_pred['predicted_score'].apply(lambda x: 0 if x < 1 else x)
-    f1_score = metrics.f1_score(train_2['label'], y_pred)
+    # y_pred = gbm.predict_proba(train_2[features], num_iteration=model.best_iteration_)[:, 1]
+    # y_pred = pd.DataFrame(y_pred, columns=['predicted_score'])
+    # top = y_pred.sort_values(['predicted_score'], ascending=False).head(int(len(y_pred)*0.577137))
+    # y_pred.loc[y_pred.predicted_score.isin(top.predicted_score), ['predicted_score']] = 1
+    # y_pred = y_pred['predicted_score'].apply(lambda x: 0 if x < 1 else x)
+    # f1_score = metrics.f1_score(train_2['label'], y_pred)
+
+    train_2['predicted_score'] = gbm.predict_proba(train_2[features], num_iteration=model.best_iteration_)[:, 1]
+    top = train_2.sort_values(['predicted_score'], ascending=False).head(int(len(train_2)*0.577137))
+    train_2['predicted_label'] = 0
+    train_2.loc[train_2.user_id.isin(top.user_id), ['predicted_label']] = 1
+    f1_score = metrics.f1_score(train_2['label'], train_2['predicted_label'])
+    train_2.loc[train_2.label != train_2.predicted_label].to_csv('../result/cuofen.csv', index=False)
 
     used_features = [i for i in train[features].columns]
     feat_imp = pd.Series(feat_imp.reshape(-1), used_features).sort_values(ascending=False)
@@ -48,7 +55,7 @@ if __name__ == '__main__':
     train = pd.concat([train_1, train_2])
 
     features = [c for c in train if
-                c not in ['label', 'user_id', 'device_reg_type', 'register_day', 'register_length',
+                c not in ['label', 'user_id', 'device_reg_type',# 'register_day', 'register_length',
                           'create_diff_max', 'create_diff_min', 'create_diff_var', 'create_diff_avg', 'total_create_count',
                           'act_diff_max', 'act_diff_min', 'act_diff_var', 'act_diff_avg',
                           # 日期相关的特征
