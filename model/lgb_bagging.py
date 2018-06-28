@@ -5,7 +5,7 @@ from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn import metrics
 
 
-def train_lgb(features, r_seed):
+def train_lgb(features, col_sample, row_sample, r_seed):
     # train = pd.read_csv('../data/train.csv', index_col=False)
     kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=2018)
     X = train[features]
@@ -17,9 +17,9 @@ def train_lgb(features, r_seed):
     for train_index, test_index in kf.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-        gbm = lgb.LGBMClassifier(objective='binary', n_estimators=2000, seed=int(r_seed), colsample_bytree=0.9, subsample=0.9)  # , num_leaves=13, max_depth=4, max_bin=90, colsample_bytree=0.9
+        gbm = lgb.LGBMClassifier(objective='binary', n_estimators=2000, seed=int(r_seed), colsample_bytree=col_sample, subsample=row_sample)  # , num_leaves=13, max_depth=4, max_bin=90, colsample_bytree=0.9
         model = gbm.fit(X_train, y_train, feature_name=features, categorical_feature=['register_type'], eval_set=[(X_test, y_test)],
-                        eval_metric='auc', early_stopping_rounds=150)
+                        eval_metric='auc', early_stopping_rounds=150, verbose=False)
         best_score.append(model.best_score_['valid_0']['auc'])
         best_iteration.append(model.best_iteration_)
         feat_imp_temp = model.feature_importances_
@@ -32,25 +32,24 @@ def train_lgb(features, r_seed):
     feat_imp = pd.Series(feat_imp.reshape(-1), used_features).sort_values(ascending=False)
     feat_imp = (feat_imp/feat_imp.sum())*100
     print(feat_imp, 'number_of_features: ', len(feat_imp))
-    feat_imp.to_csv('../result/feat_imp.csv')
-    #print(best_score, '\n', f1_score, '\n', best_iteration)
-    #print('average of best auc: ' + str(sum(best_score)/len(best_score)))
-    #print('average of best f1_score: ', str(sum(f1_score)/len(f1_score)))
-    #print('average of best iteration: ' + str(sum(best_iteration)/len(best_iteration)))
+    # feat_imp.to_csv('../result/feat_imp.csv')
 
     avg_best_auc = sum(best_score)/len(best_score)
     avg_best_f1 = sum(f1_score)/len(f1_score)
-    return avg_best_auc, avg_best_f1,
+    avg_best_iteration = sum(best_iteration)/len(best_iteration)
+    return avg_best_auc, avg_best_f1, avg_best_iteration
 
 
-def multi(r_seed, number):
+def multi(r_seed, col_sample, row_sample,number):
     auc_dict = {}
     f1_dict = {}
+    iteration_dict = {}
     for i in range(0, int(number)):
-        auc, f1 = train_lgb(features, int(r_seed)+int(i))
+        auc, f1, iteration = train_lgb(features, col_sample, row_sample, int(r_seed)+int(i))
         auc_dict[int(r_seed)+int(i)] = auc
         f1_dict[int(r_seed)+int(i)] = f1
-    return auc_dict, f1_dict
+        iteration_dict[int(r_seed)+int(i)] = iteration
+    return auc_dict, f1_dict, iteration_dict
 
 
 def online(features):
@@ -88,23 +87,24 @@ if __name__ == '__main__':
                           # 'create_in_1', 'create_in_3', 'create_in_5', 'create_in_7', 'create_in_9', 'create_in_11', 'create_in_14', 'launch_diff_min', 'launch_diff_max', 'launch_diff_median',
                           'act_diff_max', 'act_diff_min', 'act_diff_var', 'act_diff_avg',
                           # 重要性高但导致过拟合？（目前未确定）的特征
-                          'last_launch_day', 'last_act_day', 'last_create_day',
-                          #'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day',
+                          #'last_launch_day', 'last_act_day', 'last_create_day',
+                          'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day',
                           'launch_day_var', 'launch_day_avg', 'avg_launch_after_reg',
                           'avg_act_after_reg', 'avg_adv_act_after_reg', 'device_reg_type',
                           # 还没有试过的特征
                           'launch_day_median', 'day_adv_act_median', 'day_act_max_distance', 'day_adv_act_max_distance',
                           'is_author', 'is_act_page4',
-                          'day_act_median', 'launch_diff_median','launch_diff','distance','create_diff'
+                          'day_act_median', 'launch_diff_median', 'launch_diff', 'distance', 'create_diff',
                           ]]
-    # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
-    # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
-    # 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',  每日act数目差值特征组
-    auc_dict = {}
-    f1_dict = {}
-    auc_dict, f1_dict = multi(2018, 10)
-    print('auc: ' + str(sum(auc_dict.values())/len(auc_dict)))
-    print('F1: ' + str(sum(f1_dict.values()) / len(f1_dict)))
+
+    # offline
+    # auc_dict = {}
+    # f1_dict = {}
+    # iteration_dict = {}
+    # auc_dict, f1_dict, iteration_dict = multi(2018, 0.9, 0.9, 10)
+    # print('auc: ' + str(sum(auc_dict.values())/len(auc_dict)))
+    # print('F1: ' + str(sum(f1_dict.values()) / len(f1_dict)))
+    # print('iteration: ' + str(sum(iteration_dict.values()) / len(iteration_dict)))
 
     online(features)
 
