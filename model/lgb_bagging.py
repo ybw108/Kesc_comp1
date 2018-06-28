@@ -17,7 +17,7 @@ def train_lgb(features, r_seed):
     for train_index, test_index in kf.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-        gbm = lgb.LGBMClassifier(objective='binary', n_estimators=2000, seed=int(r_seed))  # , num_leaves=13, max_depth=4, max_bin=90, colsample_bytree=0.9
+        gbm = lgb.LGBMClassifier(objective='binary', n_estimators=2000, seed=int(r_seed), colsample_bytree=0.9, subsample=0.9)  # , num_leaves=13, max_depth=4, max_bin=90, colsample_bytree=0.9
         model = gbm.fit(X_train, y_train, feature_name=features, categorical_feature=['register_type'], eval_set=[(X_test, y_test)],
                         eval_metric='auc', early_stopping_rounds=150)
         best_score.append(model.best_score_['valid_0']['auc'])
@@ -40,17 +40,33 @@ def train_lgb(features, r_seed):
 
     avg_best_auc = sum(best_score)/len(best_score)
     avg_best_f1 = sum(f1_score)/len(f1_score)
-    return r_seed, avg_best_auc, avg_best_f1,
+    return avg_best_auc, avg_best_f1,
+
+
+def multi(r_seed, number):
+    auc_dict = {}
+    f1_dict = {}
+    for i in range(0, int(number)):
+        auc, f1 = train_lgb(features, int(r_seed)+int(i))
+        auc_dict[int(r_seed)+int(i)] = auc
+        f1_dict[int(r_seed)+int(i)] = f1
+    return auc_dict, f1_dict
+
 
 def online(features):
     # train = pd.read_csv('../data/train.csv', index_col=False)
     test = pd.read_csv('../data/test.csv', index_col=False)
-    gbm = lgb.LGBMClassifier(objective='binary', seed=2018)
+    for i in range(2018, 2028):
+        gbm = lgb.LGBMClassifier(objective='binary', seed=int(i), colsample_bytree=0.9, subsample=0.9)
+        gbm.fit(train[features], train['label'], feature_name=features, categorical_feature=['register_type'])
+        test['predicted_score'+str(i-2017)] = gbm.predict_proba(test[features])[:, 1]
 
-    gbm.fit(train[features], train['label'], feature_name=features, categorical_feature=['register_type'])
-    test['predicted_score'] = gbm.predict_proba(test[features])[:, 1]
-
+    test['predicted_score'] = 0
+    for i in range(1, 11):
+        test['predicted_score'] = test['predicted_score'] + test['predicted_score'+str(i)]
+    test['predicted_score'] = test['predicted_score'] / 10
     test = test[test['predicted_score'] >= 0.396]
+    # test = test.sort_values(['predicted_score'], ascending=False).head(24800)
     test[['user_id']].to_csv('../result/result.csv', header=False, index=False, sep=' ')
 
 
@@ -84,7 +100,12 @@ if __name__ == '__main__':
     # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
     # 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',  每日act数目差值特征组
-    offline(features)
+    auc_dict = {}
+    f1_dict = {}
+    auc_dict, f1_dict = multi(2018, 10)
+    print('auc: ' + str(sum(auc_dict.values())/len(auc_dict)))
+    print('F1: ' + str(sum(f1_dict.values()) / len(f1_dict)))
+
     online(features)
 
 
