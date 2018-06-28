@@ -18,7 +18,7 @@ def offline(features):
     for train_index, test_index in kf.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-        gbm = lgb.LGBMClassifier(objective='binary', n_estimators=2000, seed=2018)
+        gbm = lgb.LGBMClassifier(objective='binary', n_estimators=2000, seed=2018)  # , num_leaves=13, max_depth=4, max_bin=90, colsample_bytree=0.9
         model = gbm.fit(X_train, y_train, feature_name=features, categorical_feature=['register_type'], eval_set=[(X_test, y_test)],
                         eval_metric='auc', early_stopping_rounds=150)
         best_score.append(model.best_score_['valid_0']['auc'])
@@ -53,12 +53,15 @@ def online(features):
 
 
 if __name__ == '__main__':
-    train_1 = pd.read_csv('../data/train_1.csv', index_col=False)
-    train_2 = pd.read_csv('../data/train_2.csv', index_col=False)
-    train = pd.concat([train_1, train_2])
+    train_1a = pd.read_csv('../data/train_1a.csv', index_col=False)
+    train_2a = pd.read_csv('../data/train_2a.csv', index_col=False)
+    train_1b = pd.read_csv('../data/train_1b.csv', index_col=False)
+    train_2b = pd.read_csv('../data/train_2b.csv', index_col=False)
+    train = pd.concat([train_1a, train_2a, train_1b, train_2b])
+    # train = pd.concat([train_1a, train_1b, train_2a,  train_2b])
 
     features = [c for c in train if
-                c not in ['label', 'user_id', 'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day', 'continuous_launch_ratio', 'continuous_launch_times',
+                c not in ['label', 'user_id', 'continuous_launch_ratio', 'continuous_launch_times',
                           'day_act_var/n', 'last_second_diff_var/n', 'last_second_diff_var', 'last_second_diff_max', 'last_second_diff_min', 'last_second_diff_avg',
                           'last_second_diff', 'last_avg_diff',
                           'last_second_trend', 'second_trend_count', 'second_trend_ratio', 'last_avg_trend', 'avg_trend_count', 'avg_trend_ratio',
@@ -67,11 +70,14 @@ if __name__ == '__main__':
                           # 'create_in_1', 'create_in_3', 'create_in_5', 'create_in_7', 'create_in_9', 'create_in_11', 'create_in_14', 'launch_diff_min', 'launch_diff_max', 'launch_diff_median',
                           'act_diff_max', 'act_diff_min', 'act_diff_var', 'act_diff_avg',
                           # 重要性高但导致过拟合？（目前未确定）的特征
+                          'last_launch_day', 'last_act_day', 'last_create_day',
+                          #'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day',
                           'launch_day_var', 'launch_day_avg', 'avg_launch_after_reg',
                           'avg_act_after_reg', 'avg_adv_act_after_reg', 'device_reg_type',
                           # 还没有试过的特征
-                          'launch_day_median', 'day_act_median', 'launch_diff_median', 'day_adv_act_median', 'day_act_max_distance', 'day_adv_act_max_distance',
+                          'launch_day_median', 'day_adv_act_median', 'day_act_max_distance', 'day_adv_act_max_distance',
                           'is_author', 'is_act_page4',
+                          'day_act_median', 'launch_diff_median','launch_diff','distance','create_diff'
                           ]]
     # 'last_second_trend', 'last_avg_trend', 'second_trend_count', 'avg_trend_count', 'second_trend_ratio', 'avg_trend_ratio' 趋势特征组
     # 'launch_diff_min', 'total_launch_count', 'continuous_launch_ratio', 'last_launch_day', 'last_act_day', 'last_create_day',
