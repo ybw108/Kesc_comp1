@@ -98,13 +98,13 @@ if __name__ == '__main__':
                           ]]
 
     # offline
-    # auc_dict = {}
-    # f1_dict = {}
-    # iteration_dict = {}
-    # auc_dict, f1_dict, iteration_dict = multi(2018, 0.9, 0.9, 10)
-    # print('auc: ' + str(sum(auc_dict.values())/len(auc_dict)))
-    # print('F1: ' + str(sum(f1_dict.values()) / len(f1_dict)))
-    # print('iteration: ' + str(sum(iteration_dict.values()) / len(iteration_dict)))
+    auc_dict = {}
+    f1_dict = {}
+    iteration_dict = {}
+    auc_dict, f1_dict, iteration_dict = multi(2018, 0.9, 0.9, 10)
+    print('auc: ' + str(sum(auc_dict.values())/len(auc_dict)))
+    print('F1: ' + str(sum(f1_dict.values()) / len(f1_dict)))
+    print('iteration: ' + str(sum(iteration_dict.values()) / len(iteration_dict)))
 
     online(features)
 

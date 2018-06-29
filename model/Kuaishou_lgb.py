@@ -69,7 +69,7 @@ if __name__ == '__main__':
                           'create_diff_max', 'create_diff_min', 'create_diff_var', 'create_diff_avg', 'total_create_count',
                           # 重要性小于 1%的特征
                           # 'create_in_1', 'create_in_3', 'create_in_5', 'create_in_7', 'create_in_9', 'create_in_11', 'create_in_14', 'launch_diff_min', 'launch_diff_max', 'launch_diff_median',
-                          # 'act_diff_max', 'act_diff_min', 'act_diff_var', 'act_diff_avg',
+                          'act_diff_max', 'act_diff_min', 'act_diff_var', 'act_diff_avg',
                           # 重要性高但导致过拟合？（目前未确定）的特征
                           #'last_launch_day', 'last_act_day', 'last_create_day',
                           'launch_diff_target_day', 'act_diff_target_day', 'create_diff_target_day',

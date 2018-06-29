@@ -4,6 +4,7 @@ import lightgbm as lgb
 import xgboost as xgb
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn import metrics
+import math
 
 
 def offline(features):
@@ -61,9 +62,14 @@ def online(features):
     gbm2.fit(train[features], train['label'], feature_name=features, categorical_feature=['register_type'])
     test['predicted_score2'] = gbm2.predict_proba(test[features])[:, 1]
 
+    #test['predicted_score'] = 0.5 * test['predicted_score1'] + 0.5 * test['predicted_score2']
+    test['predicted_score'] = test['predicted_score1'].apply(lambda x: math.log(x / (1 - x))) + test['predicted_score2'].apply(lambda x: math.log(x / (1 - x)))
+    test['predicted_score'] = (test['predicted_score'] / 2).apply(lambda x: 1 / (1 + math.exp(-x)))
+    test[['user_id', 'predicted_score']].to_csv('../result/fusion_highest.csv', index=False)
+    #test[['user_id', 'predicted_score']].to_csv('../result/lgb_highest.csv', index=False)
     # test = test[test['predicted_score1'] >= 0.396]
-    test = test[(0.5 * test['predicted_score1'] + 0.5 * test['predicted_score2']) >= 0.396]
-    test[['user_id']].to_csv('../result/result.csv', header=False, index=False, sep=' ')
+    #test = test[(0.5 * test['predicted_score1'] + 0.5 * test['predicted_score2']) >= 0.396]
+    #test[['user_id']].to_csv('../result/result.csv', header=False, index=False, sep=' ')
 
 
 if __name__ == '__main__':
